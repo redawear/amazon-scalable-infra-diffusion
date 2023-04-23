@@ -23,7 +23,7 @@ resource "aws_apigatewayv2_api" "discord_gw" {
   cors_configuration {
     allow_headers = ["*"]
     allow_methods = ["OPTIONS", "PUT"]
-    allow_origins = ["https://discord.com"]
+    allow_origins = ["http://localhost:5173"]
   }
   ## Note: payload_format_version must be version 2.0 for this project
   target    = aws_lambda_function.discord_api_to_lambda.arn
