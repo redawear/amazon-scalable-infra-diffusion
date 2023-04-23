@@ -58,9 +58,7 @@ resource "aws_lambda_function" "discord_api_to_lambda" {
   ]
   environment {
     variables = {
-      APPLICATION_ID = var.discord_application_id,
-      PUBLIC_KEY     = var.discord_public_key,
-      SQS_QUEUE_URL  = aws_sqs_queue.default_queue.url
+      SQS_QUEUE_URL = aws_sqs_queue.default_queue.url
     }
   }
 

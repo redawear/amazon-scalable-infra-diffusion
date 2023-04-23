@@ -12,21 +12,6 @@ variable "unique_id" {
   default     = "prod"
 }
 
-variable "discord_application_id" {
-  description = "Discord Application ID. Can be found in Discord Developer site"
-  type        = number
-}
-
-variable "discord_public_key" {
-  description = "Discord Application Public Key. Can be found in Discord Developer site"
-  type        = string
-}
-
-variable "discord_bot_secret" {
-  description = "Discord Bot secret. Found in the Discord Developer site under 'Bot'"
-  type        = string
-}
-
 variable "huggingface_username" {
   description = "Username to the website hugging face. Used to download models."
   type        = string

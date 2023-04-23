@@ -6,25 +6,12 @@ data "aws_region" "current" {}
 
 # API Gateway, Discord Lambda handler, and SQS
 module "api_gw_lambda" {
-  source                 = "./modules/api_lambda_sqs"
-  account_id             = data.aws_caller_identity.current.account_id
-  project_id             = local.unique_project
-  region                 = data.aws_region.current.name
-  discord_application_id = var.discord_application_id
-  discord_public_key     = var.discord_public_key
-  pynacl_arn             = aws_lambda_layer_version.pynacl.arn
-  requests_arn           = aws_lambda_layer_version.requests.arn
-}
-
-# A Lambda function that creates the Discord UI
-module "discord_ui" {
-  source                 = "./modules/discord_ui"
-  account_id             = data.aws_caller_identity.current.account_id
-  project_id             = local.unique_project
-  region                 = data.aws_region.current.name
-  discord_application_id = var.discord_application_id
-  requests_arn           = aws_lambda_layer_version.requests.arn
-  discord_bot_secret     = var.discord_bot_secret
+  source       = "./modules/api_lambda_sqs"
+  account_id   = data.aws_caller_identity.current.account_id
+  project_id   = local.unique_project
+  region       = data.aws_region.current.name
+  pynacl_arn   = aws_lambda_layer_version.pynacl.arn
+  requests_arn = aws_lambda_layer_version.requests.arn
 }
 
 # The ECS cluster with GPUs

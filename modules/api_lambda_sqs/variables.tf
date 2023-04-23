@@ -13,16 +13,6 @@ variable "region" {
   type        = string
 }
 
-variable "discord_application_id" {
-  description = "Discord Application ID. Can be found in Discord Developer site"
-  type        = number
-}
-
-variable "discord_public_key" {
-  description = "Discord Application Public Key. Can be found in Discord Developer site"
-  type        = string
-}
-
 variable "pynacl_arn" {
   description = "Lambda Layer pynacl's arn"
   type        = string
