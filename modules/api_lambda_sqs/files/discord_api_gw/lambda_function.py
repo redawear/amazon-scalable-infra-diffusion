@@ -24,7 +24,7 @@ RESPONSE_TYPES =  {
                     "MODAL": 9
                   }
 
-def sendSQSMessage(customer_data, it_id, it_token, user_id, username, application_id):
+def sendSQSMessage(customer_data, user_id, model_id):
     # Send message to SQS queue
     MyMessageAttributes = {}
     for customer_request in customer_data:
@@ -35,14 +35,6 @@ def sendSQSMessage(customer_data, it_id, it_token, user_id, username, applicatio
     if "negative_prompt" in MyMessageAttributes:
         MyMessageAttributes['prompt']['StringValue'] = f"{MyMessageAttributes['prompt']['StringValue']}###{MyMessageAttributes['negative_prompt']['StringValue']}"
     MyMessageAttributes.update({
-        'interactionId': {
-            'DataType': 'String',
-            'StringValue': str(it_id)
-        },
-        'interactionToken': {
-            'DataType': 'String',
-            'StringValue': str(it_token)
-        },
         'userId': {
             'DataType': 'Number',
             'StringValue': str(user_id)
@@ -68,11 +60,6 @@ def sendSQSMessage(customer_data, it_id, it_token, user_id, username, applicatio
     )
     # print(response['MessageId'])
     return MyMessageAttributes
-
-def verify_signature(event):
-    raw_body = event.get("body")
-    auth_sig = event['headers'].get('x-signature-ed25519')
-    auth_ts  = event['headers'].get('x-signature-timestamp')
     
     message = auth_ts.encode() + raw_body.encode()
     verify_key = VerifyKey(bytes.fromhex(PUBLIC_KEY))
@@ -82,12 +69,7 @@ def ping_pong(body):
     if body.get("type") == 1:
         return True
     return False
-    
-def getCustomerData(discord_raw):
-    customer_data = {}
-    for customer_input in range(0, len(discord_raw['data']['options'])):
-        customer_data[discord_raw['data']['options'][customer_input]['name']] = discord_raw['data']['options'][customer_input]['value']
-    return customer_data
+
 
 def validateRequest(r):
     if not r.ok:
@@ -111,27 +93,26 @@ def messageResponse(customer_data):
 
 def lambda_handler(event, context):
     print(f"{event}") # debug print
-    # verify the signature
-    try:
-        verify_signature(event)
-    except Exception as e:
-        print("[UNAUTHORIZED] Invalid request signature")
-        return {
-            "statusCode": 401,
-            "body": "invalid request signature"
-        }
         
     # check if message is a ping
-    body = json.loads(event['body'])
-    # print(body)
-    if body.get("type") == 1:
-        print("PONG")
-        return {'type': 1}
+    request_data = json.loads(event['body'])
+    text_prompt = request_data.get("text_prompt")
+    user_id = request_data.get("user_id")
+    model_id = request_data.get("model_id")
     
     # Collect customer data
     info = json.loads(event.get("body"))
     # print(info)
-    customer_data = getCustomerData(info)
+    customer_data = {
+    'prompt': text_prompt,
+    'negative_prompt': 'your_fixed_negative_prompt',
+    'seed': 'your_fixed_seed',
+    'steps': 'your_fixed_steps',
+    'sampler': 'your_fixed_sampler',
+    'user_id': user_id,
+    'model_id': model_id
+    }
+
     
     # Trigger async lambda for picture generation
     # print(f"Payload = {info}")
@@ -140,20 +121,13 @@ def lambda_handler(event, context):
                         #  Payload=json.dumps(info))
     
     # Send work to SQS Queue
-    it_id = info['id']  
-    it_token = info['token']
-    user_id = info['member']['user']['id']
-    username = info['member']['user']['username']
-    sendSQSMessage(customer_data, it_id,it_token, user_id, username, APPLICATION_ID)
+    sendSQSMessage(customer_data, user_id, model_id)
     message_response = messageResponse(customer_data)
     # Respond to user
     print("Going to return some data!")
     return {
-            "type": RESPONSE_TYPES['CHANNEL_MESSAGE_WITH_SOURCE'],
-            "data": {
-                "tts": False,
-                "content": f"Submitted to Sparkle```{message_response}```",
-                "embeds": [],
-                "allowed_mentions": { "parse": [] }
-            }
-        }
+        "statusCode": 200,
+        "body": json.dumps({
+            "message": f"Submitted to Sparkle: {message_response}"
+        })
+    }
